@@ -8,16 +8,18 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
+class CategoryViewController: SwipeTableViewController {
 
-class CategoryViewController: UITableViewController {
-
-//    let realm = try! Realm()
+    let realm = try! Realm()
     var categories : Results<Category>?
 
     override func viewDidLoad() {
         super.viewDidLoad()
         loadCategories()
+        
+        tableView.separatorStyle = .none
     }
 
 
@@ -28,8 +30,12 @@ class CategoryViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
+        
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
+
         cell.textLabel?.text = categories?[indexPath.row].name ?? "No Categories created Yet"
+        cell.backgroundColor = UIColor(hexString:categories?[indexPath.row].color ?? "4B76EA")
+
         return cell
     }
 
@@ -37,9 +43,7 @@ class CategoryViewController: UITableViewController {
     // MARK TableView Data manipulation methods
     
     func save(category: Category) {
-        let realm = try! Realm()
 
-        
         do {
             try realm.write {
                 realm.add(category)
@@ -52,12 +56,25 @@ class CategoryViewController: UITableViewController {
     }
     
     func loadCategories() {
-        let realm = try! Realm()
-        
         categories = realm.objects(Category.self)
         tableView.reloadData()
     }
 
+    // MARK Delete data from Swipe 
+    
+    override func updateModel(at indexPath: IndexPath) {
+        
+        if let categoryToDelete = categories?[indexPath.row] {
+            do {
+                try realm.write {
+                    realm.delete(categoryToDelete)
+                }
+            } catch {
+                print("Error deleting category \(error)")
+            }
+        }
+        
+    }
 
     // MARK - Add new items
     
@@ -70,6 +87,8 @@ class CategoryViewController: UITableViewController {
         let action = UIAlertAction(title: "Add Category", style: .default) { (action) in
             let newCategory = Category()
             newCategory.name = textField.text!
+            newCategory.color = UIColor.randomFlat.hexValue()
+
             self.tableView.reloadData()
             self.save(category: newCategory)
         }
@@ -94,4 +113,5 @@ class CategoryViewController: UITableViewController {
             destinationVC.selectedCategory = categories?[indexPath.row]
         }
     }
+
 }
